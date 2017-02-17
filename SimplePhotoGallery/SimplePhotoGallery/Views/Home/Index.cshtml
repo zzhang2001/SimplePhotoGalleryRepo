@@ -1,0 +1,15 @@
+﻿@{
+    ViewBag.Title = "Home";
+}
+
+<h2>Home</h2>
+
+<p>
+    @Html.ActionLink("Add Photo", "Create", "Photo")
+</p>
+
+@Html.Action("_PhotoList", "Photo", new { number = 6 })
+
+@section scripts {
+    <script type="text/javascript" src="~/Scripts/ColumnEqualHeight.js"></script>
+}

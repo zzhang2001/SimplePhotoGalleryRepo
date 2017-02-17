@@ -1,0 +1,28 @@
+﻿@model IEnumerable<SimplePhotoGallery.Models.Photo>
+@using SimplePhotoGallery.Models
+
+<div class="row">
+@foreach (Photo p in Model)
+{
+    <div class="col-md-4 eq-col">
+        <div class="thumbnail" style="margin-top:15px">
+            <div>
+                <img src="@Url.Action("GetImage", "Photo", new { PhotoId = p.PhotoId })" style="width:100%" />
+            </div>
+            <div class="caption">
+                <h3>@Html.DisplayFor(model => p.Title)</h3>
+                <p>
+                    <span class="glyphicon glyphicon-star" style="color:red"></span>
+                    <span class="glyphicon glyphicon-star" style="color:red"></span>
+                    <span class="glyphicon glyphicon-star" style="color:red"></span>
+                    <span class="glyphicon glyphicon-star" style="color:red"></span>
+                    <span class="glyphicon glyphicon-star" style="color:red"></span>
+                </p>
+                <p>Created by: @Html.DisplayFor(model => p.UserName)</p>
+                <p>Created On: @Html.DisplayFor(model => p.CreatedDate)</p>
+                <p>@Html.ActionLink("Details", "Details", "Photo", new { id = p.PhotoId }, new { @class = "btn btn-primary" })</p>
+            </div>
+        </div>
+    </div>
+}
+</div>

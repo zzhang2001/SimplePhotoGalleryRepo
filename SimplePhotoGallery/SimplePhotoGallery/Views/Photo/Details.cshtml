@@ -1,0 +1,157 @@
+﻿@model SimplePhotoGallery.Models.Photo
+
+@{
+    ViewBag.Title = "Details";
+}
+
+<h2>Details</h2>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="thumbnail">
+            <div>
+                <img src="@Url.Action("GetImage", "Photo", new { PhotoId = Model.PhotoId })" style="width:100%" />
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <h3>@Html.DisplayFor(model => model.Title)</h3>
+        <p>
+            <span class="glyphicon glyphicon-star" style="color:red"></span>
+            <span class="glyphicon glyphicon-star" style="color:red"></span>
+            <span class="glyphicon glyphicon-star" style="color:red"></span>
+            <span class="glyphicon glyphicon-star" style="color:red"></span>
+            <span class="glyphicon glyphicon-star" style="color:red"></span>
+        </p>
+        <p>Description: @Html.DisplayFor(model => model.Description)</p>
+        <p>Created by: @Html.DisplayFor(model => model.UserName)</p>
+        <p>Created On: @Html.DisplayFor(model => model.CreatedDate)</p>
+        <p>Modified On: @Html.DisplayFor(model => model.ModifiedDate)</p>
+        <p>
+            @Html.ActionLink("Edit", "Edit", "Photo", new { id = Model.PhotoId }, new { @class = "btn btn-primary" })
+            <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#confirmModal">Delete</button>
+            @Html.ActionLink("Back Home", "Index", "Home", null, new { @class = "btn btn-primary" })
+        </p>
+    </div>
+</div>
+
+<div class="modal fade" id="confirmModal" role="dialog">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+                <h4 class="modal-title">Confirm Deletion</h4>
+            </div>
+            <div class="modal-body">
+                Are you sure to delete this photo?
+            </div>
+            <div class="modal-footer">
+                @Html.ActionLink("Delete", "Delete", "Photo", new { id = Model.PhotoId }, new { @class = "btn btn-primary" })
+                <button type="button" class="btn btn-primary" data-dismiss="modal">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="space" ng-app="myApp" ng-controller="myController">
+    <div class="panel panel-primary">
+        <div class="panel-heading">
+            <div class="panel-title">Comments</div>
+        </div>
+        <div class="panel-body">
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="space"><span class="text-danger">{{ ErrMsg }}</span></div>
+                </div>
+            </div>
+            <div class="row" ng-repeat="Comment in Comments">
+                <div class="col-md-12">
+                    <div>{{ Comment.Body }}</div>
+                    <div class="comment-footer">
+                        By {{ Comment.UserName }} on {{ Comment.CreatedDate }}
+                        <button type="button" class="btn btn-primary" ng-show="IsAuthenticated" ng-click="DeleteComment(Comment.CommentId)">Delete</button>
+                    </div>
+                </div>
+            </div>
+            <div class="row" ng-show="IsAuthenticated">
+                <div class="col-md-12">
+                    <div class="space">
+                        <textarea class="form-control" rows="3" ng-model="NewCommentText"></textarea>
+                    </div>
+                    <div>
+                        <button type="button" class="btn btn-primary" ng-click="AddComment(NewCommentText, PhotoId)">Add Comment</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section scripts
+{
+    <script src="~/Scripts/angular.js" type="text/javascript"></script>
+    <script type="text/javascript">
+        // Format Microsoft Json date string.
+        function CustomFormat(jsonDateString) {
+            var myDate = new Date(parseInt(jsonDateString.replace('/Date(', '').replace(')/', '')));
+            var myYear = '' + myDate.getFullYear();
+            var myMonth = myDate.getMonth() + 1;
+            myMonth = myMonth < 10 ? '0' + myMonth : myMonth;
+            var myDay = myDate.getDate();
+            myDay = myDay < 10 ? '0' + myDay : myDay;
+            var myHour = myDate.getHours();
+            myHour = myHour < 10 ? '0' + myHour : myHour;
+            var myMinute = myDate.getMinutes();
+            myMinute = myMinute < 10 ? '0' + myMinute : myMinute;
+            return myYear + '/' + myMonth + '/' + myDay + ' ' + myHour + ':' + myMinute;
+        }
+
+        var app = angular.module('myApp', []);
+        app.controller('myController', ['$scope', '$http', function ($scope, $http) {
+            $scope.PhotoId = @Model.PhotoId;
+            $scope.ErrMsg = undefined;
+            $scope.Comments = undefined;
+            $scope.IsAuthenticated = undefined;
+            $scope.NewCommentText = undefined;
+
+            // Get comments of this photo.
+            // A random number query string is passed to prevent AngularJS $http get cache in IE11.
+            $http.get('/Photo/GetComments', { params: { PhotoId : $scope.PhotoId, rnd : new Date().getTime() } }).then(function (response) {
+                $scope.Comments = response.data.Comments;
+                $scope.IsAuthenticated = response.data.IsAuthenticated;
+                angular.forEach($scope.Comments, function(value, index) {
+                    value.CreatedDate = CustomFormat(value.CreatedDate);
+                });
+            }, function (errResponse) {
+                $scope.ErrMsg = 'Error getting comments!';
+            });
+
+            // Delete a comment.
+            $scope.DeleteComment = function (CommentId) {
+                $http.post('/Photo/DeleteComment', { CommentId : CommentId }).then(function (response) {
+                    $scope.Comments = response.data.Comments;
+                    $scope.IsAuthenticated = response.data.IsAuthenticated;
+                    angular.forEach($scope.Comments, function(value, index) {
+                        value.CreatedDate = CustomFormat(value.CreatedDate);
+                    });
+                }, function (errResponse) {
+                    $scope.ErrMsg = 'Error deleting comment!';
+                });
+            }
+
+            // Add a comment.
+            $scope.AddComment = function (NewCommentText, PhotoId) {
+                $http.post('/Photo/AddComment', { NewCommentText : NewCommentText, PhotoId: PhotoId }).then(function (response) {
+                    $scope.Comments = response.data.Comments;
+                    $scope.IsAuthenticated = response.data.IsAuthenticated;
+                    angular.forEach($scope.Comments, function(value, index) {
+                        value.CreatedDate = CustomFormat(value.CreatedDate);
+                    });
+                    $scope.NewCommentText = undefined;
+                }, function (errResponse) {
+                    $scope.ErrMsg = 'Error adding comment!';
+                });
+            }
+        }]);
+    </script>
+}
